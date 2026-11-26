@@ -25,7 +25,14 @@ button{min-height:44px;padding:0 20px;border:0;border-radius:8px;background:#1D7
       .then(function(r){ return r.json(); })
       .then(function(o){ if (!o.ok) throw new Error(o.error || '오류'); return o; });
   }
-  function show(html){ document.open(); document.write(html); document.close(); }
+  function show(html){
+    // 구글 앱이 붙여 주던 휴대폰 화면 맞춤(viewport)과 탭 제목을 화면 머리에 넣음
+    var add = '';
+    if (!/name=["']?viewport/i.test(html)) add += '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">';
+    if (!/<title>/i.test(html)) add += '<title>시대인재 변주엽T</title>';
+    if (add) html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function(h){ return h + add; }) : add + html;
+    document.open(); document.write(html); document.close();
+  }
   function fail(e){
     document.getElementById('c').innerHTML = '<div class="m">화면을 불러오지 못했어요.<br>인터넷 연결을 확인하고 다시 시도해 주세요.<br><small>' + String(e && e.message || e).replace(/</g,'&lt;') + '</small></div><button onclick="location.reload()">다시 시도</button>';
   }
