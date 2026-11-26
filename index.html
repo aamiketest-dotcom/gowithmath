@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>시대인재 변주엽T</title>
+<style>
+body{margin:0;font-family:'Noto Sans KR',system-ui,-apple-system,sans-serif;color:#1A2230;background:#fff}
+.c{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;box-sizing:border-box;text-align:center}
+.s{width:30px;height:30px;border:4px solid #EAF3FB;border-top-color:#1D7ABD;border-radius:50%;animation:r .8s linear infinite}
+@keyframes r{to{transform:rotate(360deg)}}
+.m{font-size:14px;color:#6B7480;line-height:1.6}
+button{min-height:44px;padding:0 20px;border:0;border-radius:8px;background:#1D7ABD;color:#fff;font-size:15px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="c" id="c"><div class="s"></div><div class="m">불러오는 중이에요.</div></div>
+<script>
+(function(){
+  var API = 'https://script.google.com/macros/s/AKfycbyxp0DmAyluLvsXQ1C4PqGBfQu68L5GIxKmbQoihXd-mQ5EbzOMdvy4SDYz-LJTNpB89g/exec';
+  window.GWM_API = API;
+  function post(fn, args){
+    // credentials: 'omit' → 구글 계정 쿠키를 보내지 않음 (학교·보호자 관리 계정 오류 방지)
+    return fetch(API, { method: 'POST', credentials: 'omit', redirect: 'follow', body: JSON.stringify({ fn: fn, args: args || [] }) })
+      .then(function(r){ return r.json(); })
+      .then(function(o){ if (!o.ok) throw new Error(o.error || '오류'); return o; });
+  }
+  function show(html){ document.open(); document.write(html); document.close(); }
+  function fail(e){
+    document.getElementById('c').innerHTML = '<div class="m">화면을 불러오지 못했어요.<br>인터넷 연결을 확인하고 다시 시도해 주세요.<br><small>' + String(e && e.message || e).replace(/</g,'&lt;') + '</small></div><button onclick="location.reload()">다시 시도</button>';
+  }
+  function get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+  function set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+  var page = (location.search.match(/[?&]page=([^&]+)/) || [])[1];
+  if (page) { post('__page', [decodeURIComponent(page)]).then(function(o){ show(o.value); }, fail); return; }
+
+  // 지난번에 받은 화면이 있으면 바로 보여 주고, 새 화면은 뒤에서 받아 두었다가 다음에 열 때 씀
+  var cached = get('gwm_screen');
+  var fresh = post('__screen').then(function(o){
+    if (o.value && o.value !== cached) { set('gwm_screen', o.value); set('gwm_screen_id', o.id || ''); }
+    return o.value;
+  });
+  if (cached) { show(cached); fresh.catch(function(){}); }
+  else fresh.then(show, fail);
+})();
+</script>
+</body>
+</html>
