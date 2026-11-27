@@ -1,0 +1,34 @@
+# 드라이브 화면 파일(설정 탭 '화면 파일 ID')을 gowithmath.com(index.html)으로 가져옴
+# Actions 탭에서 'Run workflow'를 누르면 실행
+name: sync-screen
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: sync-screen
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 화면 받아오기
+        env:
+          API: https://script.google.com/macros/s/AKfycbyxp0DmAyluLvsXQ1C4PqGBfQu68L5GIxKmbQoihXd-mQ5EbzOMdvy4SDYz-LJTNpB89g/exec
+        run: |
+          curl -sSL --max-time 60 -H 'Content-Type: text/plain' --data '{"fn":"__screen"}' "$API" -o resp.json
+          python3 - <<'PY'
+          import json, sys
+          o = json.load(open('resp.json', encoding='utf-8'))
+          v = o.get('value') or ''
+          # 안전장치: 오류 응답이나 gowithmath.com에서 못 도는 예전 화면은 올리지 않음
+          if not o.get('ok') or len(v) < 50000 or "credentials:'omit'" not in v or 'GWM_VER' not in v:
+              sys.exit('화면을 올리지 않음: ' + str(o.get('error') or len(v)))
+          open('index.html', 'w', encoding='utf-8').write(v)
+          print('screen id', o.get('id'), len(v))
+          PY
+      - name: 바뀌었으면 올리기
+        run: |
+          git config user.name 'screen-sync'
+          git config user.email 'screen-sync@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || (git commit -m "화면 동기화" && git push)
